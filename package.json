@@ -1,0 +1,9 @@
+{
+  "name": "mpd-probate-leads",
+  "version": "1.0.0",
+  "description": "Monthly Probate Direct — Maryland county leads cart",
+  "private": true,
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}

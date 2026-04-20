@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Confirmed — Monthly Probate Direct</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1a2744; --gold: #c89b3c; --green: #198754;
+      --gray-bg: #f4f6f9; --gray-border: #dde1e9; --white: #ffffff;
+      --text: #1e2535; --muted: #6b7280;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--gray-bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo-primary { font-size: 1.05rem; font-weight: 700; }
+    .logo-secondary { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); display: block; }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.25rem;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      border-radius: 10px;
+      padding: 3rem 2.5rem;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    }
+    .success-icon {
+      width: 72px; height: 72px;
+      background: #d1fae5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    .success-icon svg { color: var(--green); }
+    h1 { font-size: 1.7rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; }
+    .subtitle { color: var(--muted); font-size: .95rem; line-height: 1.6; margin-bottom: 2rem; }
+    .what-next {
+      background: var(--gray-bg);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      text-align: left;
+      margin-bottom: 2rem;
+    }
+    .what-next h3 {
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--navy);
+      margin-bottom: .75rem;
+    }
+    .step {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-start;
+      margin-bottom: .6rem;
+      font-size: .88rem;
+      color: var(--text);
+    }
+    .step:last-child { margin-bottom: 0; }
+    .step-num {
+      background: var(--gold);
+      color: var(--navy);
+      font-size: .7rem;
+      font-weight: 700;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .btn-home {
+      display: inline-block;
+      background: var(--navy);
+      color: var(--white);
+      font-size: .95rem;
+      font-weight: 600;
+      padding: .75rem 2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: opacity .15s;
+    }
+    .btn-home:hover { opacity: .85; }
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      padding: 1rem;
+      font-size: .75rem;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <span class="logo-primary">Monthly Probate Direct</span>
+    <span class="logo-secondary">Real Estate Data Services</span>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="success-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h1>You're all set!</h1>
+    <p class="subtitle">Your subscription is confirmed. You'll receive your first batch of Maryland probate leads by the 5th of next month.</p>
+
+    <div class="what-next">
+      <h3>What happens next</h3>
+      <div class="step">
+        <span class="step-num">1</span>
+        <span>Check your email for a Stripe receipt and subscription confirmation.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <span>Our team compiles fresh court-verified filings for your selected counties.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <span>Leads are delivered to your email by the 5th of each month.</span>
+      </div>
+    </div>
+
+    <a href="/" class="btn-home">Browse More Counties</a>
+  </div>
+</main>
+
+<footer>&copy; 2026 Monthly Probate Direct</footer>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maryland Probate Leads — Monthly Probate Direct</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:        #1a2744;
+      --navy-light:  #253260;
+      --gold:        #c89b3c;
+      --gold-light:  #e0b44a;
+      --gray-bg:     #f4f6f9;
+      --gray-border: #dde1e9;
+      --text:        #1e2535;
+      --muted:       #6b7280;
+      --white:       #ffffff;
+      --red:         #dc3545;
+      --radius:      8px;
+      --shadow:      0 2px 12px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .logo { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-primary  { font-size: 1.1rem; font-weight: 700; letter-spacing: .02em; color: var(--white); }
+    .logo-secondary{ font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+    .header-badge  { background: var(--gold); color: var(--navy); font-size: .72rem; font-weight: 700; padding: .25rem .65rem; border-radius: 20px; letter-spacing: .04em; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: var(--white);
+      text-align: center;
+      padding: 3rem 1.5rem 2.5rem;
+    }
+    .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; margin-bottom: .75rem; line-height: 1.25; }
+    .hero h1 span { color: var(--gold); }
+    .hero p { font-size: 1rem; color: rgba(255,255,255,.78); max-width: 560px; margin: 0 auto 1.5rem; line-height: 1.6; }
+    .hero-pills { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+    .pill { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.9); font-size: .78rem; padding: .3rem .8rem; border-radius: 20px; letter-spacing: .03em; }
+
+    /* ── MODE TOGGLE ── */
+    .mode-bar {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-border);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: center;
+    }
+    .mode-toggle {
+      display: inline-flex;
+      background: var(--gray-bg);
+      border: 1px solid var(--gray-border);
+      border-radius: 10px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .mode-btn {
+      padding: .55rem 1.4rem;
+      border: none;
+      border-radius: 7px;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      transition: background .18s, color .18s, box-shadow .18s;
+      letter-spacing: .01em;
+      white-space: nowrap;
+    }
+    .mode-btn .mode-tag {
+      display: inline-block;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: .1rem .4rem;
+      border-radius: 4px;
+      margin-left: .4rem;
+      vertical-align: middle;
+    }
+    .mode-btn[data-mode="subscription"] .mode-tag { background: #dbeafe; color: #1e40af; }
+    .mode-btn[data-mode="payment"]      .mode-tag { background: #d1fae5; color: #065f46; }
+    .mode-btn.active {
+      background: var(--navy);
+      color: var(--white);
+      box-shadow: 0 2px 8px rgba(26,39,68,.25);
+    }
+    .mode-btn.active .mode-tag { opacity: .9; }
+    .mode-btn[data-mode="subscription"].active .mode-tag { background: rgba(219,234,254,.25); color: #bfdbfe; }
+    .mode-btn[data-mode="payment"].active      .mode-tag { background: rgba(209,250,229,.25); color: #6ee7b7; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      max-width: 1180px;
+      margin: 2rem auto;
+      padding: 0 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .cart-panel { order: -1; }
+    }
+
+    /* ── TIER GROUPS ── */
+    .tier-group { margin-bottom: 2rem; }
+    .tier-group:last-child { margin-bottom: 0; }
+
+    .tier-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: .9rem;
+      padding-bottom: .6rem;
+      border-bottom: 2px solid var(--gold);
+    }
+    .tier-header-left { display: flex; align-items: center; gap: .65rem; }
+    .tier-name { font-size: .95rem; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .07em; }
+    .tier-badge {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: .18rem .55rem;
+      border-radius: 4px;
+    }
+    .tier-badge.large  { background: #fef3c7; color: #92400e; }
+    .tier-badge.medium { background: #e0e7ff; color: #3730a3; }
+    .tier-badge.small  { background: #f0fdf4; color: #166534; }
+    .tier-price-hint { font-size: .82rem; color: var(--muted); }
+    .tier-price-hint strong { color: var(--navy); font-weight: 700; }
+    .tier-cases { font-size: .78rem; color: var(--muted); }
+
+    /* ── COUNTY GRID ── */
+    .county-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .85rem; }
+
+    .county-card {
+      background: var(--white);
+      border: 2px solid var(--gray-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      cursor: pointer;
+      transition: border-color .18s, transform .15s, box-shadow .18s;
+      position: relative;
+      user-select: none;
+    }
+    .county-card:hover { border-color: var(--navy); box-shadow: var(--shadow); transform: translateY(-2px); }
+    .county-card.selected { border-color: var(--gold); background: #fffbf0; box-shadow: 0 0 0 3px rgba(200,155,60,.18); }
+    .county-card.selected .check-icon { opacity: 1; }
+
+    .check-icon {
+      position: absolute; top: .6rem; right: .65rem;
+      width: 20px; height: 20px;
+      background: var(--gold); border-radius: 50%; opacity: 0;
+      transition: opacity .18s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .check-icon::after {
+      content: ''; display: block;
+      width: 6px; height: 10px;
+      border: 2px solid var(--white); border-top: none; border-left: none;
+      transform: rotate(45deg) translateY(-1px);
+    }
+
+    .county-name  { font-size: .9rem; font-weight: 600; color: var(--navy); margin-bottom: .5rem; padding-right: 1.4rem; line-height: 1.3; }
+    .county-price { font-size: 1.25rem; font-weight: 700; color: var(--navy); }
+    .county-price .price-suffix { font-size: .74rem; font-weight: 400; color: var(--muted); }
+
+    /* ── CART PANEL ── */
+    .cart-panel {
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 80px;
+      overflow: hidden;
+    }
+    .cart-header { background: var(--navy); color: var(--white); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+    .cart-header h2 { font-size: .95rem; font-weight: 700; letter-spacing: .04em; }
+    .cart-count { background: var(--gold); color: var(--navy); font-size: .72rem; font-weight: 700; padding: .2rem .55rem; border-radius: 20px; min-width: 24px; text-align: center; }
+
+    .cart-body { padding: 1rem 1.25rem; }
+
+    .cart-empty { text-align: center; padding: 2rem 1rem; color: var(--muted); font-size: .88rem; }
+    .cart-empty svg { opacity: .3; margin-bottom: .75rem; }
+
+    .cart-items { list-style: none; }
+    .cart-item { display: flex; align-items: center; justify-content: space-between; padding: .6rem 0; border-bottom: 1px solid var(--gray-border); gap: .5rem; }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item-name { font-size: .85rem; font-weight: 500; color: var(--text); flex: 1; line-height: 1.3; }
+    .cart-item-price { font-size: .9rem; font-weight: 700; color: var(--navy); white-space: nowrap; }
+    .cart-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: .9rem; padding: .1rem .3rem; border-radius: 4px; line-height: 1; transition: color .15s, background .15s; }
+    .cart-remove:hover { color: var(--red); background: #fff0f0; }
+
+    .cart-divider { border: none; border-top: 2px solid var(--gray-border); margin: .75rem 0; }
+
+    .cart-total-row { display: flex; justify-content: space-between; align-items: center; padding: .25rem 0; }
+    .cart-total-label { font-size: .85rem; color: var(--muted); }
+    .cart-total-amount { font-size: 1.4rem; font-weight: 700; color: var(--navy); }
+
+    .cart-mode-note {
+      font-size: .75rem;
+      text-align: center;
+      padding: .4rem .75rem;
+      border-radius: 6px;
+      margin-top: .5rem;
+      font-weight: 500;
+    }
+    .cart-mode-note.sub  { background: #eff6ff; color: #1d4ed8; }
+    .cart-mode-note.once { background: #f0fdf4; color: #15803d; }
+
+    .btn-checkout {
+      display: block; width: 100%;
+      background: var(--gold); color: var(--navy);
+      font-size: 1rem; font-weight: 700;
+      padding: .85rem 1rem; border: none; border-radius: var(--radius);
+      cursor: pointer; margin-top: 1rem; letter-spacing: .03em;
+      transition: background .18s, transform .12s;
+    }
+    .btn-checkout:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+    .btn-checkout:disabled { opacity: .45; cursor: not-allowed; }
+
+    .cart-note { font-size: .72rem; color: var(--muted); text-align: center; margin-top: .75rem; line-height: 1.5; }
+    .cart-note svg { vertical-align: middle; margin-right: 3px; }
+
+    /* ── TRUST BAR ── */
+    .trust-bar { max-width: 1180px; margin: 0 auto 2rem; padding: 0 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .trust-item { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius); padding: .75rem 1.1rem; display: flex; align-items: center; gap: .6rem; font-size: .82rem; color: var(--text); flex: 1; min-width: 160px; }
+    .trust-item .icon { font-size: 1.1rem; }
+
+    /* ── SPINNER ── */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(26,39,68,.3); border-top-color: var(--navy); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── FOOTER ── */
+    footer { background: var(--navy); color: rgba(255,255,255,.5); text-align: center; padding: 1.5rem; font-size: .78rem; margin-top: 3rem; }
+    footer a { color: var(--gold); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-primary">Monthly Probate Direct</span>
+    <span class="logo-secondary">Real Estate Data Services</span>
+  </div>
+  <span class="header-badge">Maryland Leads</span>
+</header>
+
+<div class="hero">
+  <h1>Maryland County <span>Probate Leads</span></h1>
+  <p>Fresh probate filings delivered directly to your inbox. Select the counties you want and get started today.</p>
+  <div class="hero-pills">
+    <span class="pill">✓ Court-Verified Filings</span>
+    <span class="pill">✓ All 24 Maryland Counties</span>
+    <span class="pill">✓ Cancel Anytime</span>
+    <span class="pill">✓ Instant Delivery</span>
+  </div>
+</div>
+
+<!-- Purchase Mode Toggle -->
+<div class="mode-bar">
+  <div class="mode-toggle" role="group" aria-label="Purchase mode">
+    <button class="mode-btn active" data-mode="subscription" onclick="setMode('subscription')">
+      Monthly Subscription
+      <span class="mode-tag">Best Value</span>
+    </button>
+    <button class="mode-btn" data-mode="payment" onclick="setMode('payment')">
+      One-Time Purchase
+      <span class="mode-tag">No Commitment</span>
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- County Browse -->
+  <div id="browsePanel">
+    <!-- Tier groups injected by JS -->
+  </div>
+
+  <!-- Cart -->
+  <div class="cart-panel">
+    <div class="cart-header">
+      <h2>Your Order</h2>
+      <span class="cart-count" id="cartCount">0</span>
+    </div>
+    <div class="cart-body">
+      <div class="cart-empty" id="cartEmpty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        <p>No counties selected.<br>Click a county card to add it.</p>
+      </div>
+      <ul class="cart-items" id="cartItems" style="display:none"></ul>
+      <hr class="cart-divider" id="cartDivider" style="display:none" />
+      <div class="cart-total-row" id="cartTotalRow" style="display:none">
+        <span class="cart-total-label" id="cartTotalLabel">Monthly Total</span>
+        <span class="cart-total-amount" id="cartTotal">$0</span>
+      </div>
+      <div id="cartModeNote" class="cart-mode-note sub" style="display:none"></div>
+      <button class="btn-checkout" id="checkoutBtn" disabled onclick="handleCheckout()">
+        Subscribe Monthly
+      </button>
+      <p class="cart-note">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Secured by Stripe · No card stored until checkout
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Trust bar -->
+<div class="trust-bar">
+  <div class="trust-item"><span class="icon">📋</span> Court-verified probate filings</div>
+  <div class="trust-item"><span class="icon">📬</span> Delivered by the 5th of each month</div>
+  <div class="trust-item"><span class="icon">🔒</span> Secure checkout via Stripe</div>
+  <div class="trust-item"><span class="icon">🔄</span> Month-to-month, no contracts</div>
+</div>
+
+<footer>
+  &copy; 2026 Monthly Probate Direct &mdash; <a href="mailto:support@monthlyprobatedirect.com">support@monthlyprobatedirect.com</a>
+</footer>
+
+<script>
+  // ── Data ──────────────────────────────────────────────────────────────────
+  const TIERS = [
+    {
+      key: 'large',
+      label: 'Large Counties',
+      cases: '125–157 new cases / month',
+      monthlyPrice: 77,
+      oncePrice: 97,
+      counties: [
+        { id: 'baltimore-co',   name: 'Baltimore County'       },
+        { id: 'prince-georges', name: "Prince George's County" },
+        { id: 'montgomery',     name: 'Montgomery County'      },
+      ],
+    },
+    {
+      key: 'medium',
+      label: 'Medium Counties',
+      cases: '34–86 new cases / month',
+      monthlyPrice: 47,
+      oncePrice: 67,
+      counties: [
+        { id: 'anne-arundel',  name: 'Anne Arundel County' },
+        { id: 'baltimore-city',name: 'Baltimore City'       },
+        { id: 'harford',       name: 'Harford County'       },
+        { id: 'howard',        name: 'Howard County'        },
+        { id: 'carroll',       name: 'Carroll County'       },
+      ],
+    },
+    {
+      key: 'small',
+      label: 'Small Counties',
+      cases: '1–41 new cases / month',
+      monthlyPrice: 37,
+      oncePrice: 47,
+      counties: [
+        { id: 'allegany',    name: 'Allegany County'       },
+        { id: 'calvert',     name: 'Calvert County'        },
+        { id: 'caroline',    name: 'Caroline County'       },
+        { id: 'cecil',       name: 'Cecil County'          },
+        { id: 'charles',     name: 'Charles County'        },
+        { id: 'dorchester',  name: 'Dorchester County'     },
+        { id: 'garrett',     name: 'Garrett County'        },
+        { id: 'kent',        name: 'Kent County'           },
+        { id: 'queen-annes', name: "Queen Anne's County"   },
+        { id: 'st-marys',    name: "St. Mary's County"     },
+        { id: 'somerset',    name: 'Somerset County'       },
+        { id: 'talbot',      name: 'Talbot County'         },
+        { id: 'wicomico',    name: 'Wicomico County'       },
+        { id: 'worcester',   name: 'Worcester County'      },
+      ],
+    },
+  ];
+
+  // Flat lookup: id → { name, tier key, monthlyPrice, oncePrice }
+  const COUNTY_MAP = {};
+  for (const tier of TIERS) {
+    for (const c of tier.counties) {
+      COUNTY_MAP[c.id] = { name: c.name, tier: tier.key, monthlyPrice: tier.monthlyPrice, oncePrice: tier.oncePrice };
+    }
+  }
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let mode = 'subscription'; // 'subscription' | 'payment'
+  const cart = new Set();    // set of county ids
+
+  function activePrice(id) {
+    const c = COUNTY_MAP[id];
+    return mode === 'subscription' ? c.monthlyPrice : c.oncePrice;
+  }
+
+  // ── Mode toggle ───────────────────────────────────────────────────────────
+  function setMode(m) {
+    if (mode === m) return;
+    mode = m;
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === m);
+    });
+    renderBrowse();
+    renderCart();
+  }
+
+  // ── Render browse panel ───────────────────────────────────────────────────
+  function renderBrowse() {
+    const panel = document.getElementById('browsePanel');
+    panel.innerHTML = TIERS.map(tier => {
+      const price = mode === 'subscription' ? tier.monthlyPrice : tier.oncePrice;
+      const suffix = mode === 'subscription' ? '/mo' : ' one-time';
+      const cards = tier.counties.map(c => {
+        const sel = cart.has(c.id) ? 'selected' : '';
+        return `
+          <div class="county-card ${sel}" id="card-${c.id}" onclick="toggleCounty('${c.id}')">
+            <div class="check-icon"></div>
+            <div class="county-name">${c.name}</div>
+            <div class="county-price">$${price}<span class="price-suffix">${suffix}</span></div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="tier-group">
+          <div class="tier-header">
+            <div class="tier-header-left">
+              <span class="tier-name">${tier.label}</span>
+              <span class="tier-badge ${tier.key}">${tier.key}</span>
+            </div>
+            <span class="tier-cases">${tier.cases}</span>
+          </div>
+          <div class="county-grid">${cards}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Cart interactions ─────────────────────────────────────────────────────
+  function toggleCounty(id) {
+    if (cart.has(id)) {
+      cart.delete(id);
+    } else {
+      cart.add(id);
+    }
+    const card = document.getElementById('card-' + id);
+    if (card) card.classList.toggle('selected', cart.has(id));
+    renderCart();
+  }
+
+  function removeFromCart(id) {
+    cart.delete(id);
+    const card = document.getElementById('card-' + id);
+    if (card) card.classList.remove('selected');
+    renderCart();
+  }
+
+  // ── Render cart panel ─────────────────────────────────────────────────────
+  function renderCart() {
+    const isEmpty = cart.size === 0;
+    const isSub   = mode === 'subscription';
+    const total   = [...cart].reduce((s, id) => s + activePrice(id), 0);
+
+    document.getElementById('cartEmpty').style.display    = isEmpty ? 'block' : 'none';
+    document.getElementById('cartItems').style.display    = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartDivider').style.display  = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartTotalRow').style.display = isEmpty ? 'none'  : 'flex';
+    document.getElementById('cartModeNote').style.display = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartCount').textContent      = cart.size;
+    document.getElementById('checkoutBtn').disabled       = isEmpty;
+
+    document.getElementById('cartTotalLabel').textContent = isSub ? 'Monthly Total' : 'Order Total';
+    document.getElementById('cartTotal').textContent      = '$' + total;
+
+    const noteEl = document.getElementById('cartModeNote');
+    noteEl.className = 'cart-mode-note ' + (isSub ? 'sub' : 'once');
+    noteEl.textContent = isSub
+      ? 'Billed monthly · Cancel anytime'
+      : 'One-time payment · No recurring charges';
+
+    document.getElementById('checkoutBtn').textContent = isSub
+      ? 'Subscribe Monthly →'
+      : 'Purchase One-Time →';
+
+    const priceSuffix = isSub ? '/mo' : '';
+    const ul = document.getElementById('cartItems');
+    ul.innerHTML = [...cart].map(id => {
+      const c = COUNTY_MAP[id];
+      return `
+        <li class="cart-item">
+          <span class="cart-item-name">${c.name}</span>
+          <span class="cart-item-price">$${activePrice(id)}${priceSuffix}</span>
+          <button class="cart-remove" onclick="removeFromCart('${id}')" title="Remove">✕</button>
+        </li>`;
+    }).join('');
+  }
+
+  // ── Checkout ──────────────────────────────────────────────────────────────
+  async function handleCheckout() {
+    const btn = document.getElementById('checkoutBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Redirecting…';
+
+    const items = [...cart].map(id => ({ id, name: COUNTY_MAP[id].name }));
+
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, mode }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Server error');
+      }
+
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (e) {
+      alert('Checkout failed: ' + e.message);
+      btn.disabled = false;
+      renderCart(); // restore button text
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  renderBrowse();
+  renderCart();
+</script>
+</body>
+</html>
