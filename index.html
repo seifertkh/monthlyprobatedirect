@@ -128,7 +128,7 @@
     }
 
     /* ── TIER GROUPS ── */
-    .tier-group { margin-bottom: 2rem; }
+    .tier-group { margin-bottom: 2rem; scroll-margin-top: 80px; }
     .tier-group:last-child { margin-bottom: 0; }
 
     .tier-header {
@@ -451,7 +451,7 @@
       }).join('');
 
       return `
-        <div class="tier-group">
+        <div class="tier-group" id="${tier.key}">
           <div class="tier-header">
             <div class="tier-header-left">
               <span class="tier-name">${tier.label}</span>
