@@ -222,9 +222,24 @@
 
     .cart-divider { border: none; border-top: 2px solid var(--gray-border); margin: .75rem 0; }
 
-    .cart-total-row { display: flex; justify-content: space-between; align-items: center; padding: .25rem 0; }
+    .cart-total-row { display: flex; justify-content: space-between; align-items: center; padding: .2rem 0; }
     .cart-total-label { font-size: .85rem; color: var(--muted); }
     .cart-total-amount { font-size: 1.4rem; font-weight: 700; color: var(--navy); }
+    .cart-total-original { font-size: .9rem; font-weight: 600; color: var(--muted); text-decoration: line-through; }
+    .cart-discount-row { display: flex; justify-content: space-between; align-items: center; padding: .2rem 0; }
+    .cart-discount-label { font-size: .82rem; color: #15803d; font-weight: 500; }
+    .cart-discount-amount { font-size: .9rem; font-weight: 700; color: #15803d; }
+    .cart-savings-banner {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: .45rem .75rem;
+      font-size: .78rem;
+      font-weight: 600;
+      color: #15803d;
+      text-align: center;
+      margin-top: .5rem;
+    }
 
     .cart-mode-note {
       font-size: .75rem;
@@ -322,9 +337,20 @@
       </div>
       <ul class="cart-items" id="cartItems" style="display:none"></ul>
       <hr class="cart-divider" id="cartDivider" style="display:none" />
-      <div class="cart-total-row" id="cartTotalRow" style="display:none">
-        <span class="cart-total-label" id="cartTotalLabel">Monthly Total</span>
-        <span class="cart-total-amount" id="cartTotal">$0</span>
+      <div id="cartTotals" style="display:none">
+        <div class="cart-total-row" id="cartOriginalRow" style="display:none">
+          <span class="cart-total-label">Original Price</span>
+          <span class="cart-total-original" id="cartOriginal"></span>
+        </div>
+        <div class="cart-discount-row" id="cartDiscountRow" style="display:none">
+          <span class="cart-discount-label" id="cartDiscountLabel"></span>
+          <span class="cart-discount-amount" id="cartDiscountAmount"></span>
+        </div>
+        <div class="cart-total-row">
+          <span class="cart-total-label" id="cartTotalLabel">Monthly Total</span>
+          <span class="cart-total-amount" id="cartTotal">$0</span>
+        </div>
+        <div id="cartSavingsBanner" class="cart-savings-banner" style="display:none"></div>
       </div>
       <div id="cartModeNote" class="cart-mode-note sub" style="display:none"></div>
       <button class="btn-checkout" id="checkoutBtn" disabled onclick="handleCheckout()">
@@ -483,22 +509,46 @@
     renderCart();
   }
 
+  // ── Discount logic ────────────────────────────────────────────────────────
+  function discountRate(count) {
+    if (count >= 3) return 0.20;
+    if (count === 2) return 0.10;
+    return 0;
+  }
+
   // ── Render cart panel ─────────────────────────────────────────────────────
   function renderCart() {
-    const isEmpty = cart.size === 0;
-    const isSub   = mode === 'subscription';
-    const total   = [...cart].reduce((s, id) => s + activePrice(id), 0);
+    const isEmpty    = cart.size === 0;
+    const isSub      = mode === 'subscription';
+    const original   = [...cart].reduce((s, id) => s + activePrice(id), 0);
+    const rate       = discountRate(cart.size);
+    const saving     = Math.round(original * rate);
+    const finalTotal = original - saving;
+    const hasDiscount = rate > 0;
 
     document.getElementById('cartEmpty').style.display    = isEmpty ? 'block' : 'none';
     document.getElementById('cartItems').style.display    = isEmpty ? 'none'  : 'block';
     document.getElementById('cartDivider').style.display  = isEmpty ? 'none'  : 'block';
-    document.getElementById('cartTotalRow').style.display = isEmpty ? 'none'  : 'flex';
+    document.getElementById('cartTotals').style.display   = isEmpty ? 'none'  : 'block';
     document.getElementById('cartModeNote').style.display = isEmpty ? 'none'  : 'block';
     document.getElementById('cartCount').textContent      = cart.size;
     document.getElementById('checkoutBtn').disabled       = isEmpty;
 
+    // Discount rows
+    document.getElementById('cartOriginalRow').style.display  = hasDiscount ? 'flex' : 'none';
+    document.getElementById('cartDiscountRow').style.display  = hasDiscount ? 'flex' : 'none';
+    document.getElementById('cartSavingsBanner').style.display = hasDiscount ? 'block' : 'none';
+
+    if (hasDiscount) {
+      const pct = rate * 100;
+      document.getElementById('cartOriginal').textContent       = '$' + original;
+      document.getElementById('cartDiscountLabel').textContent  = `Multi-county discount (${pct}% off)`;
+      document.getElementById('cartDiscountAmount').textContent = '−$' + saving;
+      document.getElementById('cartSavingsBanner').textContent  = `🎉 You're saving $${saving} with a multi-county discount!`;
+    }
+
     document.getElementById('cartTotalLabel').textContent = isSub ? 'Monthly Total' : 'Order Total';
-    document.getElementById('cartTotal').textContent      = '$' + total;
+    document.getElementById('cartTotal').textContent      = '$' + finalTotal;
 
     const noteEl = document.getElementById('cartModeNote');
     noteEl.className = 'cart-mode-note ' + (isSub ? 'sub' : 'once');

@@ -31,6 +31,12 @@ const COUNTY_DATA = {
   'worcester':      { name: 'Worcester County',        monthly: 37, onetime: 47 },
 };
 
+function volumeDiscountRate(count) {
+  if (count >= 3) return 0.20;
+  if (count === 2) return 0.10;
+  return 0;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -46,6 +52,11 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid mode' });
   }
 
+  const rate = volumeDiscountRate(items.length);
+  const description = mode === 'subscription'
+    ? 'Fresh Maryland probate filings delivered monthly'
+    : 'One-time batch of Maryland probate filings';
+
   const lineItems = [];
   for (const item of items) {
     const county = COUNTY_DATA[item.id];
@@ -53,10 +64,9 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: `Unknown county: ${item.id}` });
     }
 
-    const unitAmount = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
-    const description = mode === 'subscription'
-      ? 'Fresh Maryland probate filings delivered monthly'
-      : 'One-time batch of Maryland probate filings';
+    const baseAmount = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
+    // Apply discount by reducing unit_amount — Math.round to avoid fractional cents
+    const unitAmount = Math.round(baseAmount * (1 - rate));
 
     const priceData = {
       currency: 'usd',
@@ -87,6 +97,7 @@ module.exports = async function handler(req, res) {
       metadata: {
         purchase_mode: mode,
         county_ids: items.map(i => i.id).join(','),
+        discount_pct: String(rate * 100),
       },
     });
 
