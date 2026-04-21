@@ -589,7 +589,8 @@
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Server error');
+        const detail = [err.error, err.details, err.code, err.param].filter(Boolean).join(' | ');
+        throw new Error(detail || 'Server error');
       }
 
       const { url } = await res.json();

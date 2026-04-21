@@ -1,6 +1,12 @@
 const Stripe = require('stripe');
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16',
+});
 
 // Authoritative pricing — never trust client-supplied prices
 const COUNTY_DATA = {
@@ -93,7 +99,6 @@ module.exports = async function handler(req, res) {
       success_url: `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${baseUrl}/cancel.html`,
       billing_address_collection: 'required',
-      allow_promotion_codes: true,
       metadata: {
         purchase_mode: mode,
         county_ids: items.map(i => i.id).join(','),
@@ -103,7 +108,20 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
-    console.error('Stripe error:', err.message);
-    return res.status(500).json({ error: 'Failed to create checkout session' });
+    console.error('Stripe error details:', {
+      type:       err.type,
+      code:       err.code,
+      param:      err.param,
+      statusCode: err.statusCode,
+      message:    err.message,
+      raw:        err.raw,
+    });
+    return res.status(500).json({
+      error:   'Failed to create checkout session',
+      details: err.message,
+      code:    err.code   || null,
+      type:    err.type   || null,
+      param:   err.param  || null,
+    });
   }
 };
