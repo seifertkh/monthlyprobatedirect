@@ -114,7 +114,7 @@ module.exports = async function handler(req, res) {
     if (mode === 'subscription') {
       sessionParams.subscription_data = {
         billing_cycle_anchor: firstOfNextMonthUnix(),
-        proration_behavior: 'create_prorations',
+        proration_behavior: 'none',
       };
     }
 
