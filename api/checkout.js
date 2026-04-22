@@ -43,6 +43,11 @@ function volumeDiscountRate(count) {
   return 0;
 }
 
+function firstOfNextMonthUnix() {
+  const now = new Date();
+  return Math.floor(new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() / 1000);
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -93,7 +98,7 @@ module.exports = async function handler(req, res) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode,
       line_items: lineItems,
       success_url: `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`,
@@ -104,7 +109,16 @@ module.exports = async function handler(req, res) {
         county_ids: items.map(i => i.id).join(','),
         discount_pct: String(rate * 100),
       },
-    });
+    };
+
+    if (mode === 'subscription') {
+      sessionParams.subscription_data = {
+        billing_cycle_anchor: firstOfNextMonthUnix(),
+        proration_behavior: 'create_prorations',
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
