@@ -64,35 +64,60 @@ module.exports = async function handler(req, res) {
   }
 
   const rate = volumeDiscountRate(items.length);
-  const description = mode === 'subscription'
-    ? 'Fresh Maryland probate filings delivered monthly'
-    : 'One-time batch of Maryland probate filings';
 
-  const lineItems = [];
+  const lineItems      = [];
+  const addInvoiceItems = []; // subscription mode only — first invoice, discounted
+
   for (const item of items) {
     const county = COUNTY_DATA[item.id];
     if (!county) {
       return res.status(400).json({ error: `Unknown county: ${item.id}` });
     }
 
-    const baseAmount = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
-    // Apply discount by reducing unit_amount — Math.round to avoid fractional cents
-    const unitAmount = Math.round(baseAmount * (1 - rate));
-
-    const priceData = {
-      currency: 'usd',
-      product_data: {
-        name: `${county.name} — Maryland Probate Leads`,
-        description,
-      },
-      unit_amount: unitAmount,
-    };
+    const baseAmount      = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
+    const discountedAmount = Math.round(baseAmount * (1 - rate));
 
     if (mode === 'subscription') {
-      priceData.recurring = { interval: 'month' };
-    }
+      // Recurring line item at FULL price — this is what renews on the 1st
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          recurring: { interval: 'month' },
+          product_data: {
+            name: `${county.name} — Maryland Probate Leads`,
+            description: 'Monthly Maryland probate filings, renewing on the 1st',
+          },
+          unit_amount: baseAmount,
+        },
+        quantity: 1,
+      });
 
-    lineItems.push({ price_data: priceData, quantity: 1 });
+      // One-time invoice item at discounted price — charged on the first invoice today
+      const discountLabel = rate > 0 ? ` (${rate * 100}% multi-county discount)` : '';
+      addInvoiceItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${county.name} — First Month${discountLabel}`,
+          },
+          unit_amount: discountedAmount,
+        },
+        quantity: 1,
+      });
+    } else {
+      // One-time purchase — discount applies directly to the line item
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${county.name} — Maryland Probate Leads`,
+            description: 'One-time batch of Maryland probate filings',
+          },
+          unit_amount: discountedAmount,
+        },
+        quantity: 1,
+      });
+    }
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
@@ -123,6 +148,7 @@ module.exports = async function handler(req, res) {
       sessionParams.subscription_data = {
         billing_cycle_anchor: firstOfNextMonthUnix(),
         proration_behavior: 'none',
+        add_invoice_items: addInvoiceItems,
       };
     }
 
