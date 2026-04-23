@@ -263,6 +263,34 @@
     .btn-checkout:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
     .btn-checkout:disabled { opacity: .45; cursor: not-allowed; }
 
+    .cart-terms {
+      display: flex;
+      align-items: flex-start;
+      gap: .55rem;
+      margin-top: .85rem;
+      padding: .65rem .75rem;
+      background: var(--gray-bg);
+      border: 1px solid var(--gray-border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .cart-terms input[type="checkbox"] {
+      flex-shrink: 0;
+      width: 15px;
+      height: 15px;
+      margin-top: 1px;
+      accent-color: var(--navy);
+      cursor: pointer;
+    }
+    .cart-terms label {
+      font-size: .75rem;
+      color: var(--text);
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .cart-terms label a { color: var(--navy); font-weight: 600; text-decoration: underline; }
+    .cart-terms label a:hover { color: var(--gold); }
+
     .cart-note { font-size: .72rem; color: var(--muted); text-align: center; margin-top: .75rem; line-height: 1.5; }
     .cart-note svg { vertical-align: middle; margin-right: 3px; }
 
@@ -353,6 +381,12 @@
         <div id="cartSavingsBanner" class="cart-savings-banner" style="display:none"></div>
       </div>
       <div id="cartModeNote" class="cart-mode-note sub" style="display:none"></div>
+      <div class="cart-terms">
+        <input type="checkbox" id="termsCheck" onchange="renderCart()" />
+        <label for="termsCheck">
+          I agree to the <a href="https://monthlyprobatedirect.com/terms" target="_blank" rel="noopener">Terms &amp; Conditions</a> and understand that subscriptions auto-renew monthly until cancelled.
+        </label>
+      </div>
       <button class="btn-checkout" id="checkoutBtn" disabled onclick="handleCheckout()">
         Subscribe Monthly
       </button>
@@ -530,8 +564,9 @@
     document.getElementById('cartDivider').style.display  = isEmpty ? 'none'  : 'block';
     document.getElementById('cartTotals').style.display   = isEmpty ? 'none'  : 'block';
     document.getElementById('cartModeNote').style.display = isEmpty ? 'none'  : 'block';
+    const termsChecked = document.getElementById('termsCheck').checked;
     document.getElementById('cartCount').textContent      = cart.size;
-    document.getElementById('checkoutBtn').disabled       = isEmpty;
+    document.getElementById('checkoutBtn').disabled       = isEmpty || !termsChecked;
 
     // Discount rows
     document.getElementById('cartOriginalRow').style.display  = hasDiscount ? 'flex' : 'none';
