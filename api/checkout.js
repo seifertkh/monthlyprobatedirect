@@ -118,10 +118,11 @@ module.exports = async function handler(req, res) {
     };
 
     if (mode === 'subscription') {
-      const anchorTs = firstOfNextMonthUnix();
       sessionParams.subscription_data = {
-        trial_end:             anchorTs,
-        billing_cycle_anchor:  anchorTs,
+        trial_end: firstOfNextMonthUnix(),
+        trial_settings: {
+          end_behavior: { missing_payment_method: 'cancel' },
+        },
       };
     }
 
