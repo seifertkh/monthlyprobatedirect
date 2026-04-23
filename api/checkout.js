@@ -104,6 +104,14 @@ module.exports = async function handler(req, res) {
       success_url: `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${baseUrl}/cancel.html`,
       billing_address_collection: 'required',
+      consent_collection: {
+        terms_of_service: 'required',
+      },
+      custom_text: {
+        terms_of_service_acceptance: {
+          message: 'I agree to the [Terms & Conditions](https://monthlyprobatedirect.com/terms). Subscriptions auto-renew monthly until cancelled.',
+        },
+      },
       metadata: {
         purchase_mode: mode,
         county_ids: items.map(i => i.id).join(','),
