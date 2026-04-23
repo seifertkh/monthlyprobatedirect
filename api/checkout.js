@@ -145,10 +145,14 @@ module.exports = async function handler(req, res) {
     };
 
     if (mode === 'subscription') {
+      // add_invoice_items at top level — charged immediately at checkout
+      // even during the trial period
+      sessionParams.add_invoice_items = addInvoiceItems;
+
+      // trial_end delays the subscription's recurring billing until the 1st;
+      // line items are at full price so renewals are never discounted
       sessionParams.subscription_data = {
-        billing_cycle_anchor: firstOfNextMonthUnix(),
-        proration_behavior: 'none',
-        add_invoice_items: addInvoiceItems,
+        trial_end: firstOfNextMonthUnix(),
       };
     }
 
