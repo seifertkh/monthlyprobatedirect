@@ -554,7 +554,7 @@
     const isEmpty    = cart.size === 0;
     const isSub      = mode === 'subscription';
     const original   = [...cart].reduce((s, id) => s + activePrice(id), 0);
-    const rate       = discountRate(cart.size);
+    const rate       = isSub ? discountRate(cart.size) : 0;
     const saving     = Math.round(original * rate);
     const finalTotal = original - saving;
     const hasDiscount = rate > 0;

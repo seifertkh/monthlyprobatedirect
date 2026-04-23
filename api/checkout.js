@@ -67,10 +67,11 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: `Unknown county: ${item.id}` });
     }
 
-    // Subscription mode uses monthly base price; one-time uses onetime price.
-    // Both are charged immediately as a 'payment' session — discounted.
-    const baseAmount       = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
-    const discountedAmount = Math.round(baseAmount * (1 - rate));
+    const baseAmount = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
+    // Discount applies to subscriptions only; one-time purchases are always full price.
+    const discountedAmount = mode === 'subscription'
+      ? Math.round(baseAmount * (1 - rate))
+      : baseAmount;
 
     const label = mode === 'subscription' ? 'First Month' : 'One-Time Purchase';
     lineItems.push({
