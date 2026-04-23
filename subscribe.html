@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setting Up Your Subscription — Monthly Probate Direct</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1a2744; --gold: #c89b3c; --gray-bg: #f4f6f9;
+      --gray-border: #dde1e9; --white: #ffffff; --text: #1e2535; --muted: #6b7280;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--gray-bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+    }
+    .logo-primary   { font-size: 1.05rem; font-weight: 700; }
+    .logo-secondary { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); display: block; }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.25rem;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      border-radius: 10px;
+      padding: 3rem 2.5rem;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    }
+
+    /* Step indicators */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 2rem;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .3rem;
+    }
+    .step-circle {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .82rem; font-weight: 700;
+    }
+    .step-circle.done { background: #d1fae5; color: #065f46; }
+    .step-circle.active { background: var(--navy); color: var(--white); }
+    .step-circle.pending { background: var(--gray-bg); color: var(--muted); border: 2px solid var(--gray-border); }
+    .step-label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .step-connector { width: 48px; height: 2px; background: var(--gray-border); margin: 0 .25rem; margin-bottom: 1.4rem; flex-shrink: 0; }
+    .step-connector.done { background: #6ee7b7; }
+
+    .spinner-wrap { margin: 0 auto 1.5rem; }
+    .spinner {
+      display: inline-block;
+      width: 48px; height: 48px;
+      border: 3px solid rgba(26,39,68,.12);
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    h1 { font-size: 1.45rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; }
+    .subtitle { color: var(--muted); font-size: .92rem; line-height: 1.6; margin-bottom: 1.5rem; }
+
+    .info-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+      font-size: .83rem;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+    .info-box strong { display: block; margin-bottom: .25rem; color: #1e3a8a; }
+
+    .error-box {
+      background: #fff0f0;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: .85rem;
+      color: #991b1b;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .btn-retry {
+      display: inline-block;
+      background: var(--navy);
+      color: var(--white);
+      font-size: .9rem;
+      font-weight: 600;
+      padding: .7rem 1.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity .15s;
+      display: none;
+    }
+    .btn-retry:hover { opacity: .85; }
+
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      padding: 1rem;
+      font-size: .75rem;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <span class="logo-primary">Monthly Probate Direct</span>
+    <span class="logo-secondary">Real Estate Data Services</span>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-circle done">✓</div>
+        <div class="step-label">Payment</div>
+      </div>
+      <div class="step-connector done"></div>
+      <div class="step-item">
+        <div class="step-circle active">2</div>
+        <div class="step-label">Subscription</div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item">
+        <div class="step-circle pending">3</div>
+        <div class="step-label">Complete</div>
+      </div>
+    </div>
+
+    <div class="spinner-wrap" id="spinnerWrap">
+      <div class="spinner"></div>
+    </div>
+
+    <h1 id="cardTitle">Payment received!</h1>
+    <p class="subtitle" id="cardSubtitle">
+      Setting up your recurring subscription&hellip;<br>
+      You'll be redirected to Stripe to enter your card for monthly renewals.
+    </p>
+
+    <div class="info-box">
+      <strong>How your billing works:</strong>
+      Today's payment covered your first month at the discounted rate.
+      Your subscription will renew at full price on the 1st of each month going forward.
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+    <button class="btn-retry" id="retryBtn" onclick="startSubscription()">Try Again</button>
+  </div>
+</main>
+
+<footer>&copy; 2026 Monthly Probate Direct</footer>
+
+<script>
+  const COUNTY_NAMES = {
+    'baltimore-co':   'Baltimore County',
+    'prince-georges': "Prince George's County",
+    'montgomery':     'Montgomery County',
+    'anne-arundel':   'Anne Arundel County',
+    'baltimore-city': 'Baltimore City',
+    'harford':        'Harford County',
+    'howard':         'Howard County',
+    'carroll':        'Carroll County',
+    'allegany':       'Allegany County',
+    'calvert':        'Calvert County',
+    'caroline':       'Caroline County',
+    'cecil':          'Cecil County',
+    'charles':        'Charles County',
+    'dorchester':     'Dorchester County',
+    'garrett':        'Garrett County',
+    'kent':           'Kent County',
+    'queen-annes':    "Queen Anne's County",
+    'st-marys':       "St. Mary's County",
+    'somerset':       'Somerset County',
+    'talbot':         'Talbot County',
+    'wicomico':       'Wicomico County',
+    'worcester':      'Worcester County',
+  };
+
+  function getCountyIds() {
+    const params  = new URLSearchParams(window.location.search);
+    const raw     = params.get('counties') || '';
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  async function startSubscription() {
+    const ids = getCountyIds();
+
+    if (ids.length === 0) {
+      showError('No counties found in the URL. Please return to the store and try again.');
+      return;
+    }
+
+    const items = ids.map(id => ({ id, name: COUNTY_NAMES[id] || id }));
+
+    document.getElementById('errorBox').style.display   = 'none';
+    document.getElementById('retryBtn').style.display   = 'none';
+    document.getElementById('spinnerWrap').style.display = 'block';
+    document.getElementById('cardTitle').textContent    = 'Payment received!';
+    document.getElementById('cardSubtitle').innerHTML   =
+      'Setting up your recurring subscription&hellip;<br>You\'ll be redirected to Stripe to enter your card for monthly renewals.';
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ items }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = [err.error, err.details, err.code].filter(Boolean).join(' | ');
+        throw new Error(msg || 'Server error');
+      }
+
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (e) {
+      showError('Could not start subscription: ' + e.message);
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('spinnerWrap').style.display = 'none';
+    document.getElementById('cardTitle').textContent     = 'Something went wrong';
+    document.getElementById('cardSubtitle').textContent  =
+      'Your first payment was successful. Please use the button below to retry setting up your subscription, or contact support.';
+    const box = document.getElementById('errorBox');
+    box.textContent    = msg;
+    box.style.display  = 'block';
+    document.getElementById('retryBtn').style.display = 'inline-block';
+  }
+
+  // Auto-start on load
+  startSubscription();
+</script>
+</body>
+</html>

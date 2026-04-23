@@ -43,11 +43,6 @@ function volumeDiscountRate(count) {
   return 0;
 }
 
-function firstOfNextMonthUnix() {
-  const now = new Date();
-  return Math.floor(new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() / 1000);
-}
-
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -63,7 +58,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid mode' });
   }
 
-  const rate = volumeDiscountRate(items.length);
+  const rate      = volumeDiscountRate(items.length);
   const lineItems = [];
 
   for (const item of items) {
@@ -72,34 +67,41 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: `Unknown county: ${item.id}` });
     }
 
+    // Subscription mode uses monthly base price; one-time uses onetime price.
+    // Both are charged immediately as a 'payment' session — discounted.
     const baseAmount       = (mode === 'subscription' ? county.monthly : county.onetime) * 100;
     const discountedAmount = Math.round(baseAmount * (1 - rate));
 
-    const priceData = {
-      currency: 'usd',
-      product_data: {
-        name: `${county.name} — Maryland Probate Leads`,
-        description: mode === 'subscription'
-          ? 'Monthly Maryland probate filings, renewing on the 1st'
-          : 'One-time batch of Maryland probate filings',
+    const label = mode === 'subscription' ? 'First Month' : 'One-Time Purchase';
+    lineItems.push({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: `${county.name} — Maryland Probate Leads (${label})`,
+          description: mode === 'subscription'
+            ? 'Immediate first-month payment. Recurring subscription set up next.'
+            : 'One-time batch of Maryland probate filings.',
+        },
+        unit_amount: discountedAmount,
       },
-      unit_amount: discountedAmount,
-    };
-
-    if (mode === 'subscription') {
-      priceData.recurring = { interval: 'month' };
-    }
-
-    lineItems.push({ price_data: priceData, quantity: 1 });
+      quantity: 1,
+    });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
+  const baseUrl  = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
+  const countyIds = items.map(i => i.id).join(',');
+
+  // Subscription: success redirects to subscribe.html to set up the recurring billing.
+  // One-time: success goes straight to success.html.
+  const successUrl = mode === 'subscription'
+    ? `${baseUrl}/subscribe.html?counties=${encodeURIComponent(countyIds)}&session_id={CHECKOUT_SESSION_ID}`
+    : `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`;
 
   try {
-    const sessionParams = {
-      mode,
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',   // always payment for step 1
       line_items: lineItems,
-      success_url: `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: successUrl,
       cancel_url:  `${baseUrl}/cancel.html`,
       billing_address_collection: 'required',
       consent_collection: {
@@ -112,19 +114,10 @@ module.exports = async function handler(req, res) {
       },
       metadata: {
         purchase_mode: mode,
-        county_ids: items.map(i => i.id).join(','),
-        discount_pct: String(rate * 100),
+        county_ids:    countyIds,
+        discount_pct:  String(rate * 100),
       },
-    };
-
-    if (mode === 'subscription') {
-      sessionParams.subscription_data = {
-        billing_cycle_anchor: firstOfNextMonthUnix(),
-        proration_behavior:   'none',
-      };
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    });
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
@@ -134,14 +127,13 @@ module.exports = async function handler(req, res) {
       param:      err.param,
       statusCode: err.statusCode,
       message:    err.message,
-      raw:        err.raw,
     });
     return res.status(500).json({
       error:   'Failed to create checkout session',
       details: err.message,
-      code:    err.code   || null,
-      type:    err.type   || null,
-      param:   err.param  || null,
+      code:    err.code  || null,
+      type:    err.type  || null,
+      param:   err.param || null,
     });
   }
 };
