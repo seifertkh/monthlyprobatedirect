@@ -119,10 +119,8 @@ module.exports = async function handler(req, res) {
 
     if (mode === 'subscription') {
       sessionParams.subscription_data = {
-        trial_end: firstOfNextMonthUnix(),
-        trial_settings: {
-          end_behavior: { missing_payment_method: 'cancel' },
-        },
+        billing_cycle_anchor: firstOfNextMonthUnix(),
+        proration_behavior:   'none',
       };
     }
 
