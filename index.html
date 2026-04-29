@@ -294,6 +294,56 @@
     .cart-note { font-size: .72rem; color: var(--muted); text-align: center; margin-top: .75rem; line-height: 1.5; }
     .cart-note svg { vertical-align: middle; margin-right: 3px; }
 
+    /* ── ADD-ON SECTION ── */
+    .addon-section { margin-top: 2rem; }
+
+    .addon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .85rem; }
+
+    .addon-card {
+      background: var(--white);
+      border: 2px solid var(--gray-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      cursor: pointer;
+      transition: border-color .18s, transform .15s, box-shadow .18s;
+      position: relative;
+      user-select: none;
+    }
+    .addon-card:hover { border-color: #9333ea; box-shadow: var(--shadow); transform: translateY(-2px); }
+    .addon-card.selected { border-color: #9333ea; background: #faf5ff; box-shadow: 0 0 0 3px rgba(147,51,234,.12); }
+    .addon-card.selected .addon-check-icon { opacity: 1; }
+
+    .addon-check-icon {
+      position: absolute; top: .6rem; right: .65rem;
+      width: 20px; height: 20px;
+      background: #9333ea; border-radius: 50%; opacity: 0;
+      transition: opacity .18s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .addon-check-icon::after {
+      content: ''; display: block;
+      width: 6px; height: 10px;
+      border: 2px solid var(--white); border-top: none; border-left: none;
+      transform: rotate(45deg) translateY(-1px);
+    }
+    .addon-name  { font-size: .9rem; font-weight: 600; color: var(--navy); margin-bottom: .2rem; padding-right: 1.4rem; }
+    .addon-desc  { font-size: .75rem; color: var(--muted); margin-bottom: .45rem; }
+    .addon-price { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+    .addon-price-suffix { font-size: .72rem; font-weight: 400; color: var(--muted); }
+
+    /* Cart add-on section */
+    .cart-section-label {
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted);
+      margin-bottom: .4rem; display: flex; align-items: center; gap: .4rem;
+    }
+    .cart-onetime-badge {
+      background: #f3e8ff; color: #7e22ce;
+      font-size: .65rem; font-weight: 700;
+      padding: .1rem .4rem; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+
     /* ── TRUST BAR ── */
     .trust-bar { max-width: 1180px; margin: 0 auto 2rem; padding: 0 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap; }
     .trust-item { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius); padding: .75rem 1.1rem; display: flex; align-items: center; gap: .6rem; font-size: .82rem; color: var(--text); flex: 1; min-width: 160px; }
@@ -344,9 +394,23 @@
 </div>
 
 <div class="layout">
-  <!-- County Browse -->
-  <div id="browsePanel">
-    <!-- Tier groups injected by JS -->
+  <!-- County Browse + Add-ons -->
+  <div>
+    <div id="browsePanel">
+      <!-- Tier groups injected by JS -->
+    </div>
+    <div id="addonSection" class="addon-section" style="display:none">
+      <div class="tier-group">
+        <div class="tier-header" style="border-bottom-color:#a855f7">
+          <div class="tier-header-left">
+            <span class="tier-name">Archive Add-ons</span>
+            <span class="tier-badge" style="background:#f3e8ff;color:#7e22ce">One-Time</span>
+          </div>
+          <span class="tier-cases">Get last month's data for any selected county</span>
+        </div>
+        <div class="addon-grid" id="addonGrid"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Cart -->
@@ -364,22 +428,13 @@
         <p>No counties selected.<br>Click a county card to add it.</p>
       </div>
       <ul class="cart-items" id="cartItems" style="display:none"></ul>
-      <hr class="cart-divider" id="cartDivider" style="display:none" />
-      <div id="cartTotals" style="display:none">
-        <div class="cart-total-row" id="cartOriginalRow" style="display:none">
-          <span class="cart-total-label">Original Price</span>
-          <span class="cart-total-original" id="cartOriginal"></span>
-        </div>
-        <div class="cart-discount-row" id="cartDiscountRow" style="display:none">
-          <span class="cart-discount-label" id="cartDiscountLabel"></span>
-          <span class="cart-discount-amount" id="cartDiscountAmount"></span>
-        </div>
-        <div class="cart-total-row">
-          <span class="cart-total-label" id="cartTotalLabel">Monthly Total</span>
-          <span class="cart-total-amount" id="cartTotal">$0</span>
-        </div>
-        <div id="cartSavingsBanner" class="cart-savings-banner" style="display:none"></div>
+      <div id="cartAddonSection" style="display:none">
+        <hr class="cart-divider" />
+        <div class="cart-section-label">Archive Add-ons <span class="cart-onetime-badge">one-time</span></div>
+        <ul class="cart-items" id="cartAddonItems"></ul>
       </div>
+      <hr class="cart-divider" id="cartDivider" style="display:none" />
+      <div id="cartTotals" style="display:none"></div>
       <div id="cartModeNote" class="cart-mode-note sub" style="display:none"></div>
       <div class="cart-terms">
         <input type="checkbox" id="termsCheck" onchange="renderCart()" />
@@ -475,11 +530,20 @@
 
   // ── State ─────────────────────────────────────────────────────────────────
   let mode = 'subscription'; // 'subscription' | 'payment'
-  const cart = new Set();    // set of county ids
+  const cart   = new Set();  // set of county ids
+  const addOns = new Set();  // set of county ids with archive add-on selected
 
   function activePrice(id) {
     const c = COUNTY_MAP[id];
     return mode === 'subscription' ? c.monthlyPrice : c.oncePrice;
+  }
+
+  function addonPrice(id) {
+    return COUNTY_MAP[id].monthlyPrice * 0.5; // always 50% of monthly, never discounted
+  }
+
+  function fmtPrice(p) {
+    return p % 1 === 0 ? String(p) : p.toFixed(2);
   }
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
@@ -490,6 +554,7 @@
       btn.classList.toggle('active', btn.dataset.mode === m);
     });
     renderBrowse();
+    renderAddOns();
     renderCart();
   }
 
@@ -527,19 +592,53 @@
   function toggleCounty(id) {
     if (cart.has(id)) {
       cart.delete(id);
+      addOns.delete(id);
     } else {
       cart.add(id);
     }
     const card = document.getElementById('card-' + id);
     if (card) card.classList.toggle('selected', cart.has(id));
+    renderAddOns();
     renderCart();
   }
 
   function removeFromCart(id) {
     cart.delete(id);
+    addOns.delete(id);
     const card = document.getElementById('card-' + id);
     if (card) card.classList.remove('selected');
+    renderAddOns();
     renderCart();
+  }
+
+  function toggleAddOn(id) {
+    if (addOns.has(id)) { addOns.delete(id); } else { addOns.add(id); }
+    renderAddOns();
+    renderCart();
+  }
+
+  function removeAddOn(id) {
+    addOns.delete(id);
+    renderAddOns();
+    renderCart();
+  }
+
+  // ── Render add-on section (browse panel) ──────────────────────────────────
+  function renderAddOns() {
+    const section = document.getElementById('addonSection');
+    if (cart.size === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    document.getElementById('addonGrid').innerHTML = [...cart].map(id => {
+      const c = COUNTY_MAP[id];
+      const sel = addOns.has(id) ? 'selected' : '';
+      return `
+        <div class="addon-card ${sel}" onclick="toggleAddOn('${id}')">
+          <div class="addon-check-icon"></div>
+          <div class="addon-name">${c.name}</div>
+          <div class="addon-desc">Last Month's Archive</div>
+          <div class="addon-price">$${fmtPrice(addonPrice(id))} <span class="addon-price-suffix">one-time</span></div>
+        </div>`;
+    }).join('');
   }
 
   // ── Discount logic ────────────────────────────────────────────────────────
@@ -551,39 +650,112 @@
 
   // ── Render cart panel ─────────────────────────────────────────────────────
   function renderCart() {
-    const isEmpty    = cart.size === 0;
-    const isSub      = mode === 'subscription';
-    const original   = [...cart].reduce((s, id) => s + activePrice(id), 0);
+    const isEmpty  = cart.size === 0;
+    const isSub    = mode === 'subscription';
+    const baseIds  = [...cart];
+    // drop any stale addOns no longer in cart
+    for (const id of addOns) { if (!cart.has(id)) addOns.delete(id); }
+    const addonIds = [...addOns];
+
+    const original   = baseIds.reduce((s, id) => s + activePrice(id), 0);
     const rate       = isSub ? discountRate(cart.size) : 0;
     const saving     = Math.round(original * rate);
-    const finalTotal = original - saving;
+    const baseTotal  = original - saving;
+    const addonTotal = addonIds.reduce((s, id) => s + addonPrice(id), 0);
+    const grandTotal = baseTotal + addonTotal;
     const hasDiscount = rate > 0;
+    const hasAddons   = addonIds.length > 0;
 
-    document.getElementById('cartEmpty').style.display    = isEmpty ? 'block' : 'none';
-    document.getElementById('cartItems').style.display    = isEmpty ? 'none'  : 'block';
-    document.getElementById('cartDivider').style.display  = isEmpty ? 'none'  : 'block';
-    document.getElementById('cartTotals').style.display   = isEmpty ? 'none'  : 'block';
-    document.getElementById('cartModeNote').style.display = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartEmpty').style.display       = isEmpty ? 'block' : 'none';
+    document.getElementById('cartItems').style.display       = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartAddonSection').style.display = (hasAddons && !isEmpty) ? 'block' : 'none';
+    document.getElementById('cartDivider').style.display     = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartTotals').style.display      = isEmpty ? 'none'  : 'block';
+    document.getElementById('cartModeNote').style.display    = isEmpty ? 'none'  : 'block';
+
     const termsChecked = document.getElementById('termsCheck').checked;
-    document.getElementById('cartCount').textContent      = cart.size;
-    document.getElementById('checkoutBtn').disabled       = isEmpty || !termsChecked;
+    document.getElementById('cartCount').textContent = cart.size;
+    document.getElementById('checkoutBtn').disabled  = isEmpty || !termsChecked;
 
-    // Discount rows
-    document.getElementById('cartOriginalRow').style.display  = hasDiscount ? 'flex' : 'none';
-    document.getElementById('cartDiscountRow').style.display  = hasDiscount ? 'flex' : 'none';
-    document.getElementById('cartSavingsBanner').style.display = hasDiscount ? 'block' : 'none';
+    // Base county items
+    const priceSuffix = isSub ? '/mo' : '';
+    document.getElementById('cartItems').innerHTML = baseIds.map(id => {
+      const c = COUNTY_MAP[id];
+      return `<li class="cart-item">
+        <span class="cart-item-name">${c.name}</span>
+        <span class="cart-item-price">$${activePrice(id)}${priceSuffix}</span>
+        <button class="cart-remove" onclick="removeFromCart('${id}')" title="Remove">✕</button>
+      </li>`;
+    }).join('');
 
-    if (hasDiscount) {
-      const pct = rate * 100;
-      document.getElementById('cartOriginal').textContent       = '$' + original;
-      document.getElementById('cartDiscountLabel').textContent  = `Multi-county discount (${pct}% off)`;
-      document.getElementById('cartDiscountAmount').textContent = '−$' + saving;
-      document.getElementById('cartSavingsBanner').textContent  = `🎉 You're saving $${saving} with a multi-county discount!`;
+    // Add-on items
+    if (hasAddons) {
+      document.getElementById('cartAddonItems').innerHTML = addonIds.map(id => {
+        const c = COUNTY_MAP[id];
+        return `<li class="cart-item">
+          <span class="cart-item-name">${c.name} — Archive</span>
+          <span class="cart-item-price">$${fmtPrice(addonPrice(id))}</span>
+          <button class="cart-remove" onclick="removeAddOn('${id}')" title="Remove">✕</button>
+        </li>`;
+      }).join('');
     }
 
-    document.getElementById('cartTotalLabel').textContent = isSub ? 'Monthly Total' : 'Order Total';
-    document.getElementById('cartTotal').textContent      = '$' + finalTotal;
+    // Build totals section dynamically
+    let html = '';
+    if (hasAddons) {
+      if (hasDiscount) {
+        html += `
+          <div class="cart-total-row">
+            <span class="cart-total-label">Original Price</span>
+            <span class="cart-total-original">$${original}</span>
+          </div>
+          <div class="cart-discount-row">
+            <span class="cart-discount-label">${rate * 100}% multi-county discount</span>
+            <span class="cart-discount-amount">−$${saving}</span>
+          </div>`;
+      }
+      const baseLabel = isSub ? 'Counties (1st month)' : 'Counties';
+      html += `
+        <div class="cart-total-row">
+          <span class="cart-total-label">${baseLabel}</span>
+          <span style="font-size:.9rem;font-weight:600;color:var(--navy)">$${fmtPrice(baseTotal)}</span>
+        </div>
+        <div class="cart-total-row">
+          <span class="cart-total-label">Archives <span class="cart-onetime-badge">one-time</span></span>
+          <span style="font-size:.9rem;font-weight:600;color:var(--navy)">$${fmtPrice(addonTotal)}</span>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--gray-border);margin:.4rem 0">
+        <div class="cart-total-row">
+          <span class="cart-total-label" style="font-weight:600">Today's Total</span>
+          <span class="cart-total-amount">$${fmtPrice(grandTotal)}</span>
+        </div>`;
+      if (hasDiscount) {
+        html += `<div class="cart-savings-banner">🎉 You're saving $${saving} with a multi-county discount!</div>`;
+      }
+    } else {
+      if (hasDiscount) {
+        html += `
+          <div class="cart-total-row">
+            <span class="cart-total-label">Original Price</span>
+            <span class="cart-total-original">$${original}</span>
+          </div>
+          <div class="cart-discount-row">
+            <span class="cart-discount-label">${rate * 100}% multi-county discount</span>
+            <span class="cart-discount-amount">−$${saving}</span>
+          </div>`;
+      }
+      html += `
+        <div class="cart-total-row">
+          <span class="cart-total-label">${isSub ? 'Monthly Total' : 'Order Total'}</span>
+          <span class="cart-total-amount">$${baseTotal}</span>
+        </div>`;
+      if (hasDiscount) {
+        html += `<div class="cart-savings-banner">🎉 You're saving $${saving} with a multi-county discount!</div>`;
+      }
+    }
+    document.getElementById('cartTotals').innerHTML = html;
 
+    // Mode note
     const noteEl = document.getElementById('cartModeNote');
     noteEl.className = 'cart-mode-note ' + (isSub ? 'sub' : 'once');
     noteEl.textContent = isSub
@@ -593,18 +765,6 @@
     document.getElementById('checkoutBtn').textContent = isSub
       ? 'Subscribe Monthly →'
       : 'Purchase One-Time →';
-
-    const priceSuffix = isSub ? '/mo' : '';
-    const ul = document.getElementById('cartItems');
-    ul.innerHTML = [...cart].map(id => {
-      const c = COUNTY_MAP[id];
-      return `
-        <li class="cart-item">
-          <span class="cart-item-name">${c.name}</span>
-          <span class="cart-item-price">$${activePrice(id)}${priceSuffix}</span>
-          <button class="cart-remove" onclick="removeFromCart('${id}')" title="Remove">✕</button>
-        </li>`;
-    }).join('');
   }
 
   // ── Checkout ──────────────────────────────────────────────────────────────
@@ -613,13 +773,14 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Redirecting…';
 
-    const items = [...cart].map(id => ({ id, name: COUNTY_MAP[id].name }));
+    const items       = [...cart].map(id => ({ id, name: COUNTY_MAP[id].name }));
+    const addOnItems  = [...addOns].filter(id => cart.has(id)).map(id => ({ id }));
 
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, mode }),
+        body: JSON.stringify({ items, mode, addOns: addOnItems }),
       });
 
       if (!res.ok) {
@@ -639,6 +800,7 @@
 
   // ── Init ──────────────────────────────────────────────────────────────────
   renderBrowse();
+  renderAddOns();
   renderCart();
 </script>
 </body>

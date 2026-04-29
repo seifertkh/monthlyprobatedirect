@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { items, mode } = req.body;
+  const { items, mode, addOns } = req.body;
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'No items provided' });
@@ -89,6 +89,27 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  // Add-on archive items — always payment line items, never discounted
+  if (Array.isArray(addOns) && addOns.length > 0) {
+    for (const addon of addOns) {
+      const county = COUNTY_DATA[addon.id];
+      if (!county) {
+        return res.status(400).json({ error: `Unknown county for add-on: ${addon.id}` });
+      }
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${county.name} — Last Month's Archive (One-Time)`,
+            description: "One-time purchase of last month's Maryland probate filings.",
+          },
+          unit_amount: Math.round(county.monthly * 0.5 * 100),
+        },
+        quantity: 1,
+      });
+    }
+  }
+
   const baseUrl  = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
   const countyIds = items.map(i => i.id).join(',');
 
@@ -117,6 +138,7 @@ module.exports = async function handler(req, res) {
         purchase_mode: mode,
         county_ids:    countyIds,
         discount_pct:  String(rate * 100),
+        addon_ids:     Array.isArray(addOns) ? addOns.map(a => a.id).join(',') : '',
       },
     });
 
