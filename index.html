@@ -467,6 +467,10 @@
 </footer>
 
 <script>
+  // ── URL param debug ───────────────────────────────────────────────────────
+  console.log('[MPD] window.location.search:', window.location.search);
+  console.log('[MPD] mode param:', new URLSearchParams(window.location.search).get('mode'));
+
   // ── Data ──────────────────────────────────────────────────────────────────
   const TIERS = [
     {
@@ -529,7 +533,10 @@
   }
 
   // ── State ─────────────────────────────────────────────────────────────────
-  let mode = 'subscription'; // 'subscription' | 'payment'
+  let mode = new URLSearchParams(window.location.search).get('mode') === 'onetime'
+    ? 'payment'
+    : 'subscription';
+  console.log('[MPD] initial mode:', mode);
   const cart   = new Set();  // set of county ids
   const addOns = new Set();  // set of county ids with archive add-on selected
 
@@ -799,6 +806,9 @@
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
   renderBrowse();
   renderAddOns();
   renderCart();
