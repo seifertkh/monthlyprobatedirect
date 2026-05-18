@@ -546,7 +546,7 @@
   }
 
   function addonPrice(id) {
-    return COUNTY_MAP[id].monthlyPrice * 0.5; // always 50% of monthly, never discounted
+    return COUNTY_MAP[id].oncePrice * 0.5; // always 50% of one-time price, never discounted
   }
 
   function fmtPrice(p) {

@@ -103,7 +103,7 @@ module.exports = async function handler(req, res) {
             name: `${county.name} — Last Month's Archive (One-Time)`,
             description: "One-time purchase of last month's Maryland probate filings.",
           },
-          unit_amount: Math.round(county.monthly * 0.5 * 100),
+          unit_amount: Math.round(county.onetime * 0.5 * 100),
         },
         quantity: 1,
       });
