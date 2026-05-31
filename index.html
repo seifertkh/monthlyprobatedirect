@@ -442,6 +442,12 @@
           I agree to the <a href="https://monthlyprobatedirect.com/terms" target="_blank" rel="noopener">Terms &amp; Conditions</a> and understand that subscriptions auto-renew monthly until cancelled.
         </label>
       </div>
+      <div class="cart-terms" id="billingDisclosure" style="display:none;margin-top:.5rem">
+        <input type="checkbox" id="billingCheck" onchange="renderCart()" />
+        <label for="billingCheck">
+          I understand my first payment is charged today and my subscription will renew on the 1st of each month going forward.
+        </label>
+      </div>
       <button class="btn-checkout" id="checkoutBtn" disabled onclick="handleCheckout()">
         Subscribe Monthly
       </button>
@@ -680,9 +686,12 @@
     document.getElementById('cartTotals').style.display      = isEmpty ? 'none'  : 'block';
     document.getElementById('cartModeNote').style.display    = isEmpty ? 'none'  : 'block';
 
-    const termsChecked = document.getElementById('termsCheck').checked;
+    const termsChecked   = document.getElementById('termsCheck').checked;
+    const billingChecked = document.getElementById('billingCheck').checked;
+    document.getElementById('billingDisclosure').style.display = isSub ? '' : 'none';
+    const allChecked = isSub ? (termsChecked && billingChecked) : termsChecked;
     document.getElementById('cartCount').textContent = cart.size;
-    document.getElementById('checkoutBtn').disabled  = isEmpty || !termsChecked;
+    document.getElementById('checkoutBtn').disabled  = isEmpty || !allChecked;
 
     // Base county items
     const priceSuffix = isSub ? '/mo' : '';
