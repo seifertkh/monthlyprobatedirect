@@ -145,7 +145,7 @@
     </div>
     <h1>You're all set!</h1>
     <p class="subtitle">Your subscription is confirmed. You'll receive your first batch of Maryland probate leads by the 5th of next month.</p>
-    <p class="billing-notice">Your first payment has been processed today. Your subscription will renew on the 1st of next month. You can cancel anytime.</p>
+    <p class="billing-notice" id="billingNotice">Finalizing your first payment&hellip;</p>
 
     <div class="what-next">
       <h3>What happens next</h3>
@@ -168,5 +168,37 @@
 </main>
 
 <footer>&copy; 2026 Monthly Probate Direct</footer>
+
+<script>
+  // After the subscription Checkout, charge the full first month on the saved
+  // card via /api/finalize. The subscription itself is already created and
+  // anchored to the 1st; this just collects month one.
+  (function () {
+    var notice    = document.getElementById('billingNotice');
+    var sessionId = new URLSearchParams(window.location.search).get('session_id');
+
+    if (!sessionId) {
+      notice.textContent = 'Your subscription is set up. It renews on the 1st of each month. You can cancel anytime.';
+      return;
+    }
+
+    fetch('/api/finalize', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ session_id: sessionId }),
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error((res.d && (res.d.details || res.d.error)) || 'error');
+        notice.innerHTML = 'Your first payment has been processed today. Your subscription renews on the 1st of next month. You can cancel anytime.';
+      })
+      .catch(function () {
+        notice.innerHTML = 'Your subscription is set up, but we could not process the first payment automatically. Please email support@monthlyprobatedirect.com and we will sort it out — you have not been double-charged.';
+        notice.style.background   = '#fff7ed';
+        notice.style.borderColor  = '#fed7aa';
+        notice.style.color        = '#9a3412';
+      });
+  })();
+</script>
 </body>
 </html>

@@ -42,8 +42,8 @@ function volumeDiscountRate(count) {
   return 0;
 }
 
-// First of next month as a UNIX timestamp (seconds), in the server's local time.
-// Used as the subscription billing_cycle_anchor so renewals always land on the 1st.
+// First of next month as a UNIX timestamp (seconds), local server time. Used as
+// the subscription billing_cycle_anchor so renewals always land on the 1st.
 function firstOfNextMonthUnix() {
   const now = new Date();
   return Math.floor(new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() / 1000);
@@ -62,20 +62,16 @@ module.exports = async function handler(req, res) {
 
   const rate = volumeDiscountRate(items.length);
 
-  const recurringLineItems = []; // billed every month, anchored to the 1st
-  const oneTimeLineItems   = []; // billed once, on the first invoice (today)
-
+  // Recurring line items only. Stripe forbids one-time prices in a subscription
+  // Checkout Session when proration_behavior is 'none', so the first-month
+  // charge is handled afterward by /api/finalize as a separate one-time invoice.
+  const recurringLineItems = [];
   for (const item of items) {
     const county = COUNTY_DATA[item.id];
     if (!county) {
       return res.status(400).json({ error: `Unknown county: ${item.id}` });
     }
-
-    // Discount applies to every month, including the first — so the recurring
-    // price and the first-month charge use the same discounted amount.
     const monthlyAmount = Math.round(county.monthly * 100 * (1 - rate));
-
-    // Recurring price — charged on the 1st of each month (billing_cycle_anchor).
     recurringLineItems.push({
       price_data: {
         currency: 'usd',
@@ -88,81 +84,48 @@ module.exports = async function handler(req, res) {
       },
       quantity: 1,
     });
-
-    // First month — a one-time line item billed immediately at checkout. In
-    // subscription mode, one-time line items land on the initial invoice only.
-    oneTimeLineItems.push({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: `${county.name} — Maryland Probate Leads (First Month)`,
-          description: 'Immediate first-month payment. Recurring billing begins on the 1st.',
-        },
-        unit_amount: monthlyAmount,
-      },
-      quantity: 1,
-    });
   }
 
-  // Optional one-time archive add-ons (last month's data) — never discounted.
-  if (Array.isArray(addOns) && addOns.length > 0) {
+  // Validate any add-ons now so we fail fast; they're billed by /api/finalize.
+  if (Array.isArray(addOns)) {
     for (const addon of addOns) {
-      const county = COUNTY_DATA[addon.id];
-      if (!county) {
+      if (!COUNTY_DATA[addon.id]) {
         return res.status(400).json({ error: `Unknown county for add-on: ${addon.id}` });
       }
-      oneTimeLineItems.push({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: `${county.name} — Last Month's Archive (One-Time)`,
-            description: "One-time purchase of last month's Maryland probate filings.",
-          },
-          unit_amount: Math.round(county.onetime * 0.5 * 100),
-        },
-        quantity: 1,
-      });
     }
   }
 
   const baseUrl   = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
   const countyIds = items.map(i => i.id).join(',');
+  const addonIds  = Array.isArray(addOns) ? addOns.map(a => a.id).join(',') : '';
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      // Recurring items bill on the anchor; one-time items bill now.
-      line_items: [...recurringLineItems, ...oneTimeLineItems],
+      line_items: recurringLineItems,
+      // Success page calls /api/finalize to charge the first month immediately.
       success_url: `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${baseUrl}/cancel.html`,
       billing_address_collection: 'required',
-      consent_collection: {
-        terms_of_service: 'required',
-      },
-      custom_text: {
-        terms_of_service_acceptance: {
-          message: 'I agree to the [Terms & Conditions](https://monthlyprobatedirect.com/terms). Subscriptions auto-renew monthly until cancelled.',
-        },
-      },
       subscription_data: {
-        // Anchor recurring billing to the 1st of next month. With
-        // proration_behavior 'none', the gap from signup to the 1st is free —
-        // no $0 invoice and no trial (unlike the old trial_end approach). The
-        // first month is collected now via the one-time line items above, so
-        // the customer pays a full month today and renews full on the 1st.
+        // Anchor recurring billing to the 1st of next month. proration_behavior
+        // 'none' makes the gap from signup to the 1st free (no $0 invoice, no
+        // trial). The first month is charged separately by /api/finalize, so
+        // the customer is never charged at checkout without an active sub.
         billing_cycle_anchor: firstOfNextMonthUnix(),
         proration_behavior: 'none',
         metadata: {
           county_ids:   countyIds,
+          addon_ids:    addonIds,
           discount_pct: String(rate * 100),
         },
       },
       metadata: {
         purchase_mode: 'subscription',
         county_ids:    countyIds,
+        addon_ids:     addonIds,
         discount_pct:  String(rate * 100),
-        addon_ids:     Array.isArray(addOns) ? addOns.map(a => a.id).join(',') : '',
       },
     });
 
