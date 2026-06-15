@@ -792,11 +792,19 @@
     const items       = [...cart].map(id => ({ id, name: COUNTY_MAP[id].name }));
     const addOnItems  = [...addOns].filter(id => cart.has(id)).map(id => ({ id }));
 
+    // Subscriptions go to /api/subscribe, which creates the whole subscription
+    // (first month charged now + recurring anchored to the 1st) in a single
+    // Checkout Session. One-time purchases still use /api/checkout.
+    const endpoint = mode === 'subscription' ? '/api/subscribe' : '/api/checkout';
+    const payload  = mode === 'subscription'
+      ? { items, addOns: addOnItems }
+      : { items, mode, addOns: addOnItems };
+
     try {
-      const res = await fetch('/api/checkout', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, mode, addOns: addOnItems }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
