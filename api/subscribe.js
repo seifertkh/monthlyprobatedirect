@@ -42,13 +42,6 @@ function volumeDiscountRate(count) {
   return 0;
 }
 
-// First of next month as a UNIX timestamp (seconds), local server time. Used as
-// the subscription billing_cycle_anchor so renewals always land on the 1st.
-function firstOfNextMonthUnix() {
-  const now = new Date();
-  return Math.floor(new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() / 1000);
-}
-
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -60,38 +53,46 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'No items provided' });
   }
 
-  const rate = volumeDiscountRate(items.length);
+  const rate      = volumeDiscountRate(items.length);
+  const lineItems = [];
 
-  // Recurring line items only. Stripe forbids one-time prices in a subscription
-  // Checkout Session when proration_behavior is 'none', so the first-month
-  // charge is handled afterward by /api/finalize as a separate one-time invoice.
-  const recurringLineItems = [];
+  // First-month charge — the real discounted amount, shown and charged today.
   for (const item of items) {
     const county = COUNTY_DATA[item.id];
     if (!county) {
       return res.status(400).json({ error: `Unknown county: ${item.id}` });
     }
-    const monthlyAmount = Math.round(county.monthly * 100 * (1 - rate));
-    recurringLineItems.push({
+    lineItems.push({
       price_data: {
         currency: 'usd',
-        recurring: { interval: 'month' },
         product_data: {
-          name: `${county.name} — Maryland Probate Leads`,
-          description: 'Monthly Maryland probate filings, renewing on the 1st.',
+          name: `${county.name} — Maryland Probate Leads (First Month)`,
+          description: 'First month of a monthly subscription. Renews on the 1st of each month.',
         },
-        unit_amount: monthlyAmount,
+        unit_amount: Math.round(county.monthly * 100 * (1 - rate)),
       },
       quantity: 1,
     });
   }
 
-  // Validate any add-ons now so we fail fast; they're billed by /api/finalize.
+  // Optional one-time archive add-ons (last month's data) — never discounted.
   if (Array.isArray(addOns)) {
     for (const addon of addOns) {
-      if (!COUNTY_DATA[addon.id]) {
+      const county = COUNTY_DATA[addon.id];
+      if (!county) {
         return res.status(400).json({ error: `Unknown county for add-on: ${addon.id}` });
       }
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${county.name} — Last Month's Archive (One-Time)`,
+            description: "One-time purchase of last month's Maryland probate filings.",
+          },
+          unit_amount: Math.round(county.onetime * 0.5 * 100),
+        },
+        quantity: 1,
+      });
     }
   }
 
@@ -101,24 +102,18 @@ module.exports = async function handler(req, res) {
 
   try {
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+      mode: 'payment',
       payment_method_types: ['card'],
-      line_items: recurringLineItems,
-      // Success page calls /api/finalize to charge the first month immediately.
+      line_items: lineItems,
+      // Save the card so /api/finalize can set up the recurring subscription.
+      payment_intent_data: { setup_future_usage: 'off_session' },
+      customer_creation: 'always',
       success_url: `${baseUrl}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${baseUrl}/cancel.html`,
       billing_address_collection: 'required',
-      subscription_data: {
-        // Anchor recurring billing to the 1st of next month. proration_behavior
-        // 'none' makes the gap from signup to the 1st free (no $0 invoice, no
-        // trial). The first month is charged separately by /api/finalize, so
-        // the customer is never charged at checkout without an active sub.
-        billing_cycle_anchor: firstOfNextMonthUnix(),
-        proration_behavior: 'none',
-        metadata: {
-          county_ids:   countyIds,
-          addon_ids:    addonIds,
-          discount_pct: String(rate * 100),
+      custom_text: {
+        submit: {
+          message: 'This is your first month. Your subscription renews on the 1st of each month at the same price and can be cancelled anytime.',
         },
       },
       metadata: {

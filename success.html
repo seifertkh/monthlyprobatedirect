@@ -145,7 +145,7 @@
     </div>
     <h1>You're all set!</h1>
     <p class="subtitle">Your subscription is confirmed. You'll receive your first batch of Maryland probate leads by the 5th of next month.</p>
-    <p class="billing-notice" id="billingNotice">Finalizing your first payment&hellip;</p>
+    <p class="billing-notice" id="billingNotice">Setting up your subscription&hellip;</p>
 
     <div class="what-next">
       <h3>What happens next</h3>
@@ -190,10 +190,10 @@
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (!res.ok) throw new Error((res.d && (res.d.details || res.d.error)) || 'error');
-        notice.innerHTML = 'Your first payment has been processed today. Your subscription renews on the 1st of next month. You can cancel anytime.';
+        notice.innerHTML = 'Your first month is paid and your subscription is active — it renews on the 1st of each month. You can cancel anytime.';
       })
       .catch(function () {
-        notice.innerHTML = 'Your subscription is set up, but we could not process the first payment automatically. Please email support@monthlyprobatedirect.com and we will sort it out — you have not been double-charged.';
+        notice.innerHTML = 'Your first-month payment went through, but we could not set up the recurring subscription automatically. Please email support@monthlyprobatedirect.com and we will finish it — you have not been double-charged.';
         notice.style.background   = '#fff7ed';
         notice.style.borderColor  = '#fed7aa';
         notice.style.color        = '#9a3412';
